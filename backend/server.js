@@ -17,9 +17,7 @@ app.use(express.json()); //To Access req.body
 app.use(cookieParser());
 
 // Routes
-app.get("/", (req, res) => {
-  res.send("Server is Ready");
-});
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
