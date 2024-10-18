@@ -1,5 +1,6 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import { getReceiverId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -39,6 +40,11 @@ export const sendMessage = async (req, res) => {
 
     // Save conversation and message atomically
     await Promise.all([conversation.save(), newMessage.save()]);
+    //Socket
+    const receiverSocketId = getReceiverId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     // Send successful response
     res.status(201).json({
@@ -64,13 +70,15 @@ export const getMessage = async (req, res) => {
       participants: { $all: [senderId, userToChatId] },
     }).populate("messages");
 
+    // If no conversation is found, return empty messages array
     if (!conversation) {
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        messages: conversation.messages,
+        messages: [],
       });
     }
 
+    // Send successful response with messages
     res.status(200).json({
       success: true,
       messages: conversation.messages,

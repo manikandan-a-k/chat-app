@@ -7,14 +7,6 @@ export const signup = async (req, res) => {
     const { fullName, userName, password, confirmPassword, gender } = req.body;
     const image = req.file;
 
-    // Check if the passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords don't match",
-      });
-    }
-
     // Check if the username already exists
     const userExists = await User.findOne({ userName });
     if (userExists) {
@@ -53,7 +45,7 @@ export const signup = async (req, res) => {
     });
 
     //Generate Token
-    generateToken(newUser._id, res);
+    const token = generateToken(newUser._id, res);
 
     // Save the user to the database
     await newUser.save();
@@ -61,6 +53,10 @@ export const signup = async (req, res) => {
     return res.json({
       success: true,
       message: "User Created",
+      user: {
+        ...newUser._doc,
+        password: "",
+      },
     });
   } catch (error) {
     console.log(`Error in signup Controller: ${error.message}`);
@@ -93,13 +89,12 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate JWT token and set it in the cookie
-    await generateToken(user._id, res);
+    const token = generateToken(user._id, res);
 
-    // Return success response
     return res.status(201).json({
       success: true,
-      message: "Login Success",
+      message: "Login successful",
+      user: { ...user._doc, password: "" },
     });
   } catch (error) {
     console.log(`Error in Login Controller: ${error.message}`);
@@ -110,13 +105,13 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout =  (req, res) => {
+export const logout = (req, res) => {
   try {
     res.clearCookie("jwt-chat");
     return res.status(201).json({
-      success:true,
-      message:"Logout Successfully"
-    })
+      success: true,
+      message: "Logout Successfully",
+    });
   } catch (error) {
     console.log(`Error in logout Controller ${error.message}`);
     return res.json({
